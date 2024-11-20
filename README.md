@@ -7,4 +7,4 @@
 使用pycryptodome库进行算法正确性检验的脚本
 
 ##### main.py
-Python实现的版本，为[https://www.cnblogs.com/luogi/p/15508933.html#python%E5%AE%9E%E7%8E%B0]处的代码
+Python实现的版本，为 [https://www.cnblogs.com/luogi/p/15508933.html#python%E5%AE%9E%E7%8E%B0] 处的代码
