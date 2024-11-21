@@ -1,8 +1,6 @@
+#! /usr/bin/python3
 from functools import reduce
 import numpy as np
-
-
-
 
 # 整数转二进制数组，指定位长 n，大端序
 def int2bin(a, n):
@@ -18,9 +16,6 @@ def int2bin(a, n):
 # 二进制数组转整数，大端序
 def bin2int(a):
     return reduce(lambda x,y: x*2+y, a)
-
-def printBytes(a):
-    print(hex(bin2int(a)))
 
 # 循环左移off位
 def leftRotate(a, off):
@@ -183,8 +178,6 @@ def P(a):
 
 # F函数，用于处理一个半块
 def Feistel(a, subKey):
-
-
     t = binXor(Expand(a), subKey)
     t = S(t)
     t = P(t)
@@ -193,6 +186,7 @@ def Feistel(a, subKey):
 
 def goRound(l, r, subKey):
     return r, binXor(l, Feistel(r, subKey))
+    
 
 def DES(plain, key, method="encrypt"):
     subkeys = keyGen(int2bin(key, 64))
@@ -202,7 +196,7 @@ def DES(plain, key, method="encrypt"):
     m = IP(int2bin(plain, 64))
 
     l, r = np.array(m, dtype=int).reshape(2, -1).tolist()
-    
+
     for i in range(16):
         l, r = goRound(l, r, subkeys[i])
 

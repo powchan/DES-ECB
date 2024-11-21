@@ -7,10 +7,6 @@
 #define BLOCK_SIZE 64
 #define byte unsigned char
 
-
-
-
-
 const int ip[64] = {58, 50, 42, 34, 26, 18, 10, 2, 60, 52, 44, 36, 28, 20, 12, 4,
                     62, 54, 46, 38, 30, 22, 14, 6, 64, 56, 48, 40, 32, 24, 16, 8,
                     57, 49, 41, 33, 25, 17, 9, 1, 59, 51, 43, 35, 27, 19, 11, 3,
@@ -69,12 +65,6 @@ uint64_t bin2int(byte *a, int n)
         result = result * 2 + (int)a[i];
     }
     return result;
-}
-
-void printBytes(byte* b, int n)
-{
-    uint64_t a = bin2int(b, n);
-    printf("0x%llx\n", a);
 }
 
 // 循环左移
@@ -148,7 +138,6 @@ void keyGen(uint64_t key, byte subkeys[NUM_ROUNDS][48])
 {
     byte left[28], right[28];
     PC1(key, left, right);
-    
 
     byte combined[56];
 
@@ -156,17 +145,16 @@ void keyGen(uint64_t key, byte subkeys[NUM_ROUNDS][48])
     {
         leftRotate(left, 28, shifts[round]);
         leftRotate(right, 28, shifts[round]);
-        
+
         // 合并左右部分
         for (int i = 0; i < 28; i++)
         {
             combined[i] = left[i];
             combined[i + 28] = right[i];
         }
-        
+
         // 选择置换2生成子密钥
         PC2(combined, subkeys[round]);
-
     }
 }
 
@@ -208,7 +196,7 @@ void P(byte *a, byte *res)
 // Feistel函数
 void Feistel(byte *a, byte *subkey, byte *res)
 {
-    byte expanded[48], s_out[32], p_out[32];
+    byte expanded[48], s_out[48], p_out[32];
     Expand(a, expanded);
     binXor(expanded, subkey, s_out, 48);
     S(s_out, p_out);
@@ -221,6 +209,7 @@ void goRound(byte *l, byte *r, byte *subkey)
     byte temp[32];
     byte ftemp[32];
     Feistel(r, subkey, ftemp);
+
     binXor(l, ftemp, temp, 32);
     for (int i = 0; i < 32; i++)
     {
@@ -230,18 +219,21 @@ void goRound(byte *l, byte *r, byte *subkey)
 }
 
 // DES加解密
-void DES(uint64_t plain, uint64_t key, const char *method, uint64_t *result)
+/**
+ * @param[in] method 1加密，2解密
+ */
+void DES(uint64_t plain, uint64_t key, int method, uint64_t *result)
 {
     byte subkeys[NUM_ROUNDS][48];
     keyGen(key, subkeys);
-    if (method == "decrypt")
+    if (method == 2)
     {
         byte tempkey[NUM_ROUNDS][48];
         for (int i = 0; i < NUM_ROUNDS; i++)
         {
-            memcpy(tempkey[i], subkeys[NUM_ROUNDS-i-1], 48);
+            memcpy(tempkey[i], subkeys[NUM_ROUNDS - i - 1], 48);
         }
-        memcpy(subkeys,tempkey, 48*NUM_ROUNDS);
+        memcpy(subkeys, tempkey, 48 * NUM_ROUNDS);
     }
     byte plain_bin[64], res_bin[64];
     int2bin(plain, 64, plain_bin);
@@ -257,33 +249,58 @@ void DES(uint64_t plain, uint64_t key, const char *method, uint64_t *result)
         right[i] = ip_out[i + 32];
     }
 
-
     // 加解密过程
-    
-    
-        for (int i = 0; i < NUM_ROUNDS; i++)
-        {
-            goRound(left, right, subkeys[i]);
-        }
-    
+
+    for (int i = 0; i < NUM_ROUNDS; i++)
+    {
+        goRound(left, right, subkeys[i]);
+    }
 
     byte lr[64];
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < 32; i++)
     {
         lr[i] = right[i];
         lr[i + 32] = left[i];
     }
-    // 最终置换
 
     FP(lr, res_bin);
     *result = bin2int(res_bin, 64);
-    
 }
 
 int main()
 {
-    uint64_t result;
-    DES(0x05cd4e9311ed3aae, 0x3132333435363738, "decrypt", &result);
-    printf("Result: 0x%llx\n", result);
+    while (1)
+    {
+        uint64_t result, key, input;
+        int mode;
+        while (1)
+        {
+            printf(
+                "0: exit\n"
+                "1: encrypt\n"
+                "2: decrypt\n"
+                "Choice: ");
+            scanf("%d", &mode);
+            if (mode == 0)
+            {
+                return 0;
+            }
+            else if (mode == 1 || mode == 2)
+            {
+                break;
+            }
+            else
+            {
+                printf("No such command!\n");
+            }
+        }
+
+        printf("Input key(hex): ");
+        scanf("%llx", &key);
+        printf("Input text(hex): ");
+        scanf("%llx", &input);
+        DES(input, key, mode, &result);
+        printf("Result: 0x%016llx\n", result);
+    }
     return 0;
 }
